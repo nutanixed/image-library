@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Library</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-8 w-auto">
+                    <span class="text-xl font-bold tracking-tight text-slate-900">IMAGE <span class="text-blue-600 font-extrabold">LIBRARY</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('logout') }}" class="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors bg-slate-100 hover:bg-red-50 px-4 py-2 rounded-lg">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="space-y-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fas fa-list text-blue-600"></i> Available Images ({{ total_count }})
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-1">Direct access to Nutanix images and software.</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm cursor-pointer">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Show Hidden</span>
+                            <div class="relative inline-flex items-center">
+                                <input type="checkbox" id="showAllToggle" class="sr-only peer" {% if show_all %}checked{% endif %} onchange="window.location.href='/?show_all=' + this.checked">
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </label>
+                        <div class="relative w-48 sm:w-64">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i class="fas fa-search text-xs"></i>
+                            </span>
+                            <input type="text" id="searchInput" placeholder="Search..." 
+                                class="pl-9 pr-4 py-2 w-full border border-slate-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-xs transition-all">
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/50">
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">File Name</th>
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Details</th>
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linksTableBody" class="divide-y divide-slate-100">
+                            {% for cat in display_categories %}
+                            {% if grouped_links[cat] %}
+                            <tr class="bg-slate-100/50 border-l-4 border-blue-600 border-t border-slate-200/60">
+                                <td colspan="3" class="px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-800">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-layer-group text-blue-600/50"></i>
+                                        {{ cat }}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% for file in grouped_links[cat] %}
+                            <tr class="hover:bg-slate-50/50 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center flex-wrap gap-2 mb-1">
+                                        <div class="font-bold text-slate-900 filename-text">{{ file.name }}</div>
+                                    </div>
+                                    <span class="text-xs text-slate-400 break-all full-url-text">{{ download_base_url }}/{{ file.name }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 rounded-full uppercase">{{ file.ext }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <button onclick='copyLink({{ file.name|tojson }}, this)' 
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all inline-flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
+                                        <i class="far fa-copy"></i>
+                                        <span>Prism Central Link</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        async function copyLink(filename, btn) {
+            const baseUrl = "{{ download_base_url }}";
+            const originalHtml = btn.innerHTML;
+            
+            try {
+                // Ensure spaces and special chars are encoded for Prism Central
+                const encodedUrl = baseUrl + '/' + encodeURIComponent(filename).replace(/%2F/g, '/');
+                
+                if (!navigator.clipboard) {
+                    fallbackCopyTextToClipboard(encodedUrl);
+                } else {
+                    await navigator.clipboard.writeText(encodedUrl);
+                }
+                btn.innerHTML = '<i class="fas fa-check text-emerald-500"></i> Copied';
+            } catch (err) {
+                console.error('Failed to copy!', err);
+                fallbackCopyTextToClipboard(encodedUrl);
+                btn.innerHTML = '<i class="fas fa-check text-emerald-500"></i> Copied';
+            }
+
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+            }, 2000);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const tableBody = document.getElementById('linksTableBody');
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            
+            // First pass: Hide/Show all file rows based on search term
+            rows.forEach(row => {
+                const fileNameDiv = row.querySelector('.filename-text');
+                if (fileNameDiv) {
+                    const name = fileNameDiv.textContent.toLowerCase();
+                    if (name.includes(term)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+
+            // Second pass: Handle category headers
+            let currentHeader = null;
+            let hasVisibleFiles = false;
+
+            rows.forEach(row => {
+                if (row.querySelector('[colspan="3"]')) {
+                    // If we found a new header, decide if we should have shown the PREVIOUS category
+                    if (currentHeader) {
+                        currentHeader.style.display = hasVisibleFiles ? '' : 'none';
+                    }
+                    currentHeader = row;
+                    hasVisibleFiles = false;
+                } else {
+                    // Check if this file row is visible
+                    if (row.style.display !== 'none') {
+                        hasVisibleFiles = true;
+                    }
+                }
+            });
+
+            // Handle the very last category
+            if (currentHeader) {
+                currentHeader.style.display = (hasVisibleFiles || term === '') ? '' : 'none';
+            }
+            
+            // If search is empty, show everything (including all headers)
+            if (term === '') {
+                rows.forEach(row => row.style.display = '');
+            }
+        });
+    </script>
+</body>
+</html>
