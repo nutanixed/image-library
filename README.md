@@ -78,6 +78,25 @@ docker compose up -d nutanix-images-ui
 
 from `/home/nutanix/plex-docker`.
 
+## Container Deployment
+
+This app is also intended to run as a containerized service.
+
+- Compose project path: `/home/nutanix/plex-docker`
+- Service name: `nutanix-images-ui`
+- Typical URL: `http://localhost:8083`
+
+Common commands:
+
+```bash
+cd /home/nutanix/plex-docker
+docker compose up -d nutanix-images-ui
+docker compose logs -f nutanix-images-ui
+docker compose restart nutanix-images-ui
+```
+
+When containerized, ensure the file storage directory is mounted to `/data` inside the container, since the app scans `/data` for files.
+
 ## Security Notes
 
 - `.env`, logs, and Python cache files should stay untracked (see `.gitignore`).
